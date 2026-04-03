@@ -9,7 +9,7 @@ export const qrCodeGenerator = async (url: string): Promise<Buffer> => {
     // Create the QR code with high error correction and custom scaling
     // No division operators used here, just pure configuration.
     const qrCodeBuffer = await QRCode.toBuffer(url, {
-      margin: 2,                 // Border size around the QR code
+      margin: 1.5,                 // Border size around the QR code
       scale: 10,                 // Resolution/Size multiplier
       errorCorrectionLevel: 'H'  // High resilience (readable even if 30% is damaged)
     })
