@@ -1,27 +1,35 @@
 import { Composer } from "grammy";
-import { rename, stat, chown } from "node:fs/promises";
-import { basename, extname, join } from "node:path";
 
-const ME = 120075267;
-const MUSIC_DIR = "/mnt/storage/shared/inbox";
-const VIDEO_DIR = "/mnt/storage/shared/movies_inbox";
-const API_DATA = "/mnt/storage/july-api";
-
-const AUDIO = [".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".aiff", ".wma"];
-const VIDEO = [".mkv", ".mp4", ".avi", ".m4v"];
+import {
+  API_DATA,
+  AUDIO_FORMATS,
+  Evergreen,
+  MUSIC_PATH,
+  VIDEO_FORMATS,
+  VIDEO_PATH,
+} from "../types/upload";
+import { basename } from "@grammyjs/i18n/script/deps/deno.land/std@0.192.0/path/win32";
+import { extname, join } from "@grammyjs/i18n/script/src/deps";
 
 export const upload = new Composer();
+const evergreens = keyof typeof Evergreen
 
-upload.on(["message:document", "message:audio", "message:video"], async (ctx, next) => {
-  if (ctx.from?.id !== ME) return next();
-  const media = ctx.msg.document ?? ctx.msg.audio ?? ctx.msg.video;
+upload.on(["message:document"], async (ctx) => {
+  if (ctx.from?.id !== ) return;
+
+  const media = ctx.msg.document;
   const name = basename(media?.file_name ?? "");
   const ext = extname(name).toLowerCase();
-  const dir = AUDIO.includes(ext) ? MUSIC_DIR : VIDEO.includes(ext) ? VIDEO_DIR : null;
-  if (!dir) return next();
+  const uploadDirectory = AUDIO_FORMATS.includes(ext)
+    ? MUSIC_PATH
+    : VIDEO_FORMATS.includes(ext)
+      ? VIDEO_PATH
+      : null;
+  if (!uploadDirectory)
+    return console.log(`❌ Not a proper directory found for ${name}!`);
   const file = await ctx.getFile();
   const src = file.file_path!.replace("/var/lib/telegram-bot-api", API_DATA);
-  const dest = join(dir, name);
+  const dest = join(uploadDirectory, name);
   await rename(src, dest);
   const { uid, gid } = await stat(dir);
   await chown(dest, uid, gid);
