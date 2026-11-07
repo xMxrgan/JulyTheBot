@@ -10,3 +10,5 @@ export type Chat = {
   isTopic?: boolean                 // Topic in groups
   isDirectMessages?: boolean        // Channel messages
 }
+
+// Comment done by mobile
