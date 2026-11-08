@@ -27,7 +27,9 @@ bot.on("message::url", async (ctx) => {
     });
   } catch (error) {
     console.error("Bot logic error:", error);
-    return ctx.reply("Sorry, I failed to generate that QR code. Try another link.");
+    return ctx.reply(
+      "Sorry, I failed to generate that QR code. Try another link.",
+    );
   }
 });
 
@@ -37,6 +39,11 @@ bot.command("start", async (ctx) => {
   await ctx.reply("Eccola lì la tastiera", { reply_markup: customKeyboard });
   await ctx.reply("Check out this menu:", { reply_markup: groceryListMenu });
 });
+
+import { memory } from "./features/memory";
+import { ai } from "./features/ai";
+bot.use(memory);
+bot.use(ai);
 
 bot.catch((err) => {
   const cfx = err.ctx;
