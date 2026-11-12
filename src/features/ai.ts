@@ -107,7 +107,7 @@ async function photoSummary(immichKey: string): Promise<string> {
       headers: { "x-api-key": immichKey },
     });
     if (!response.ok) return "";
-    const stats = await response.json();
+    const stats = (await response.json()) as { images: number; videos: number };
     return `Foto di questa persona su Immich: ${stats.images} foto e ${stats.videos} video.`;
   } catch {
     return ""; // Immich non raggiungibile: si risponde senza questi dati
@@ -219,7 +219,9 @@ async function askModel(messages: Message[]): Promise<string> {
   if (!response.ok)
     throw new Error(`Ollama ha risposto con errore HTTP ${response.status}`);
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    message?: { content?: string };
+  };
   return data.message?.content?.trim() || "(nessuna risposta)"; // ?. = se manca, non va in errore
 }
 
