@@ -22,7 +22,6 @@ export const roleEnum = pgEnum("role", [
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   telegramId: bigint({ mode: "number" }).notNull().unique(),
-  chatId:,
   username: varchar({ length: 32 }),
   role: roleEnum().notNull().default("standard"),
   firstName: varchar({ length: 64 }).notNull(),
@@ -31,19 +30,18 @@ export const users = pgTable("users", {
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export const findOwner = async () => {
+/** L'utente con ruolo "owner", oppure undefined se non c'è ancora. */
+export async function findOwner() {
   const [owner] = await db
-  .select()
+    .select()
     .from(users)
     .where(eq(users.role, "owner"))
-    .limit(1); // ci aspettiamo un solo owner
+    .limit(1);
   return owner;
-};
-
-export const listAdmins = ()=> {
-  const admins= await db.select().from(users).where(eq(users.role, 'admin'))
-  return   admins
-} 
+}
+export async function listAdmins() {
+  return db.select().from(users).where(eq(users.role, "admin"));
+}
 
 export const owner = await findOwner();
 
