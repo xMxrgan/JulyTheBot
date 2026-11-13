@@ -1,6 +1,7 @@
 import { Bot } from "grammy";
 import { upload } from "./src/features/upload";
 import { link } from "./src/features/link";
+
 // import { saveUser } from "./src/utils";
 // import { authenticate } from "./src/features/authenticate";
 // import { db } from "./src/db";
@@ -34,9 +35,9 @@ export const bot = new Bot(token, {
 
 // ─── 2. Feature specifiche ───────────────────────────────────────────────
 
+bot.use(link);
 // bot.use(authenticate);
 bot.use(upload);
-bot.use(link);
 
 // ─── 3. Comandi ──────────────────────────────────────────────────────────
 
