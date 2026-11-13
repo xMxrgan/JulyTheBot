@@ -1,8 +1,11 @@
 import { Bot } from "grammy";
 import { upload } from "./src/features/upload";
-import { saveUser } from "./src/utils";
-import { authenticate, identify } from "./src/features/authenticate";
-import { findUser } from "./src/methods/users/user.service";
+import { link } from "./src/features/link";
+// import { saveUser } from "./src/utils";
+// import { authenticate } from "./src/features/authenticate";
+// import { db } from "./src/db";
+// import { users } from "./src/db/schema/users.schema";
+// import { eq } from "drizzle-orm";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error("Missing Bot Token");
@@ -14,32 +17,33 @@ export const bot = new Bot(token, {
   },
 });
 
-/** L'utente con ruolo "owner", oppure undefined se non esiste ancora. */
-export async function findOwner() {
-  const [owner] = await db
-    .select()
-    .from(users)
-    .where(eq(users.role, "owner"))
-    .limit(1); // ci aspettiamo un solo owner
-  return owner;
-}
+// /** L'utente con ruolo "owner", oppure undefined se non esiste ancora. */
+// export async function findOwner() {
+//   const [owner] = await db
+//     .select()
+//     .from(users)
+//     .where(eq(users.role, "owner"))
+//     .limit(1); // ci aspettiamo un solo owner
+//   return owner;
+// }
 
-// Dentro un handler, quando serve:
-const owner = await findOwner();
+// // Dentro un handler, quando serve:
+// const owner = await findOwner();
 
 // ─── 1. Creazione del bot ───────────────────────────────────────────────
 
 // ─── 2. Feature specifiche ───────────────────────────────────────────────
 
-bot.use(authenticate);
+// bot.use(authenticate);
 bot.use(upload);
+bot.use(link);
 
 // ─── 3. Comandi ──────────────────────────────────────────────────────────
 
-bot.command("start", async (ctx) => {
-  authenticate;
-  saveUser(ctx.from);
-});
+// bot.command("start", async (ctx) => {
+//   authenticate;
+//   saveUser(ctx.from);
+// });
 
 // ─── Errori ──────────────────────────────────────────────────────────────
 
