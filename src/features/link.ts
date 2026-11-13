@@ -27,7 +27,8 @@
  *      Lo stesso controllo vale per ogni redirect.
  *   4. Pagine web solo dai siti della lista PLATFORMS. Da tutti gli altri si accettano
  *      solo link diretti a immagini, video e audio. L'estrattore "generico" di yt-dlp è spento.
- *   5. Sandbox (bubblewrap): yt-dlp, gallery-dl e ffmpeg vedono il sistema in sola
+ *   5. Sandbox (bubblewrap), come utente "july-dl" senza privilegi (mai root):
+ *      yt-dlp, gallery-dl e ffmpeg vedono il sistema in sola
  *      lettura, NON vedono /home e /mnt (token, .env, i tuoi file), non ricevono le
  *      variabili d'ambiente di July e possono scrivere solo nella cartella del download.
  *   6. Ogni file scaricato viene controllato: estensione ammessa, "firma" del formato,
@@ -115,7 +116,19 @@ const BIN = {
   nice: "/usr/bin/nice",
   ionice: "/usr/bin/ionice",
   df: "/usr/bin/df",
+  setpriv: "/usr/bin/setpriv",
+  chown: "/usr/bin/chown",
 };
+
+/**
+ * Utente senza privilegi che esegue yt-dlp, gallery-dl e ffmpeg (lo crea il comando per il Pi).
+ * July gira come root: senza questo, i programmi scaricherebbero da root.
+ * Così invece girano come un utente che non possiede niente sul Pi, e in più dentro la sandbox.
+ */
+const SANDBOX_USER = "july-dl";
+
+/** true se July gira come root: in quel caso scendiamo a SANDBOX_USER. */
+const RUNNING_AS_ROOT = process.getuid?.() === 0;
 
 /** true = senza sandbox July rifiuta di scaricare. Lascialo true. */
 const REQUIRE_SANDBOX = true;
@@ -775,7 +788,9 @@ async function saveBody(response: Response, file: string) {
   }
   if (!response.body) throw new Blocked("il sito ha risposto senza contenuto");
 
-  const handle = await open(file, "wx", 0o600); // "wx" = crea, non sovrascrivere mai
+  // "wx" = crea, non sovrascrivere mai. 0o644 = july-dl può leggerlo per il controllo con ffprobe
+  // (la cartella del download resta comunque chiusa a tutti gli altri)
+  const handle = await open(file, "wx", 0o644);
   const reader = response.body.getReader();
   let total = 0;
 
@@ -814,8 +829,19 @@ async function runSandboxed(
   const inner = sandbox
     ? [BIN.bwrap, ...sandboxArgs(jobDir), command, ...args]
     : [command, ...args];
-  // nice + ionice: il download usa CPU e disco solo quando film e musica non ne hanno bisogno
-  const full = ["-n", "10", BIN.ionice, "-c", "2", "-n", "7", ...inner];
+  // nice + ionice: il download usa CPU e disco solo quando film e musica non ne hanno bisogno.
+  // dropRoot(): se July è root, da qui in poi si è l'utente july-dl.
+  const full = [
+    "-n",
+    "10",
+    BIN.ionice,
+    "-c",
+    "2",
+    "-n",
+    "7",
+    ...dropRoot(),
+    ...inner,
+  ];
 
   // Strato 7: se la cartella supera MAX_JOB_MB, il controller ferma il programma
   const controller = new AbortController();
@@ -900,25 +926,41 @@ function sandboxArgs(jobDir: string): string[] {
 let sandboxStatus: Promise<boolean> | undefined;
 
 function sandboxWorks(): Promise<boolean> {
-  sandboxStatus ??= execFileAsync(
+  // La prova si fa come la farà davvero il download: da utente july-dl
+  const [command = BIN.bwrap, ...args] = [
+    ...dropRoot(),
     BIN.bwrap,
-    [
-      "--ro-bind",
-      "/",
-      "/",
-      "--unshare-all",
-      "--share-net",
-      "--die-with-parent",
-      "/usr/bin/true",
-    ],
-    { timeout: 10_000 },
-  )
+    "--ro-bind",
+    "/",
+    "/",
+    "--unshare-all",
+    "--share-net",
+    "--die-with-parent",
+    "/usr/bin/true",
+  ];
+  sandboxStatus ??= execFileAsync(command, args, { timeout: 10_000 })
     .then(() => true)
     .catch((error) => {
       console.warn("[link] sandbox bwrap non disponibile:", errorText(error));
       return false;
     });
   return sandboxStatus;
+}
+
+/**
+ * Se July è root, il comando parte con setpriv, che cambia utente in july-dl
+ * prima di eseguire il resto. Se July NON è root, non serve: lista vuota.
+ */
+function dropRoot(): string[] {
+  if (!RUNNING_AS_ROOT) return [];
+  return [
+    BIN.setpriv,
+    "--reuid",
+    SANDBOX_USER,
+    "--regid",
+    SANDBOX_USER,
+    "--clear-groups",
+  ];
 }
 
 /** Ogni 3 secondi misura la cartella: oltre MAX_JOB_MB ferma tutto. */
@@ -950,6 +992,14 @@ async function createJobDir(): Promise<string> {
   const jobDir = await mkdtemp(path.join(WORK_DIR, "job-"));
   await mkdir(path.join(jobDir, "out"));
   await mkdir(path.join(jobDir, "home"));
+
+  // La cartella l'ha creata root: la diamo a july-dl, che è chi ci scrive dentro
+  if (RUNNING_AS_ROOT)
+    await execFileAsync(BIN.chown, [
+      "-R",
+      `${SANDBOX_USER}:${SANDBOX_USER}`,
+      jobDir,
+    ]);
   return jobDir;
 }
 

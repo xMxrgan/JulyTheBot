@@ -6,10 +6,11 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
-import z, { keyof } from "zod";
+
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import { db } from "..";
 import { eq } from "drizzle-orm";
+import z from "zod";
 
 export const roleEnum = pgEnum("role", [
   "owner",
@@ -42,8 +43,8 @@ export async function findOwner() {
 export async function listAdmins() {
   return db.select().from(users).where(eq(users.role, "admin"));
 }
-
-export const owner = await findOwner();
+// 
+// export const owner = await findOwner();
 
 export const insertUserSchema = createInsertSchema(users);
 export const updateUserSchema = createUpdateSchema(users).omit({
