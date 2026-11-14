@@ -1,13 +1,15 @@
 import { CreateUser } from "./db/schema/users.schema";
 import { createUser } from "./methods/users/user.repository";
 
-export const MUSIC_DIR = "/mnt/storage/shared/inbox";
-export const VIDEO_DIR = "/mnt/storage/shared/movies_inbox";
-export const FILES_DIR = "/mnt/storage/shared/files";
-export const LIBRARY_DIR = "/mnt/storage/shared/library";
-export const API_DATA = "/mnt/storage/july-api";
+export const MusicDirectory = "/mnt/storage/shared/inbox";
+export const CinemaDirectory = "/mnt/storage/shared/movies_inbox";
+export const FilesDirectory = "/mnt/storage/shared/files";
+export const LibraryDirectory = "/mnt/storage/shared/library";
+export const BookDirectory = "/mnt/storage/shared/book";
+export const UnivrDirectory = "/mnt/storage/shared/univr";
+export const ApiDirectory = "/mnt/storage/july-api";
 
-export const AUDIO = [
+export const MusicExtensions = [
   ".mp3",
   ".flac",
   ".m4a",
@@ -18,16 +20,37 @@ export const AUDIO = [
   ".aiff",
   ".wma",
 ];
-export const VIDEO = [".mkv", ".mp4", ".avi", ".m4v"];
-export const FILE = [".pdf", ".jpg"];
-export const LIBRARY = [".mov", ".hevc"];
+export const CinemaExtensions = [".mkv", ".mp4", ".avi", ".m4v"];
+export const FilesExtensions = [".pdf", ".jpg"];
+export const LibraryExtensions = [".mov", ".hevc"];
+export const BookExtensions = [".epub", ".mobi", ".pdf"];
+export const UnivrExtensions = [".mkv"];
 
 export const Directories = [
-  { extension: AUDIO, directory: MUSIC_DIR, label: "🎵 Music" },
-  { extension: VIDEO, directory: VIDEO_DIR, label: "🎬 Cinema" },
-  { extension: FILE, directory: FILES_DIR, label: "📄 Files" },
-  { extension: LIBRARY, directory: LIBRARY_DIR, label: "📚 Library" },
+  { extension: MusicExtensions, directory: MusicDirectory, label: "🎵 Music" },
+  {
+    extension: CinemaExtensions,
+    directory: CinemaDirectory,
+    label: "🎬 Cinema",
+  },
+  { extension: FilesExtensions, directory: FilesDirectory, label: "📄 Files" },
+  {
+    extension: LibraryExtensions,
+    directory: LibraryDirectory,
+    label: "🏔️ Library",
+  },
+  { extension: BookExtensions, directory: BookDirectory, label: "📚 Books" },
+  {
+    extension: UnivrExtensions,
+    directory: UnivrDirectory,
+    label: "🎓 Lessons",
+  },
 ] as const;
+
+export const checkAuthorization = (telegramId: bigint)=> {
+
+  return 
+} satisfies
 
 export const saveUser = async (ctx: any) => {
   if (!ctx.from) return;
